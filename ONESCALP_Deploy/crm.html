@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ONESCALP — CRM</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#C9A84C;--dark:#111111;--ink:#1C1C1C;
+  --paper:#F8F5EF;--white:#FFFFFF;--muted:#888880;--border:#E0DAD0;
+  --green:#2E7D32;--green-bg:#F0F7F0;--red:#B71C1C;--red-bg:#FFF0F0;
+  --blue:#1A4A8A;--blue-bg:#EEF3FA;--amber:#7A5200;--amber-bg:#FFF8E1;
+  --section-bg:#F2EDE3;
+}
+body{font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh}
+.app-header{background:var(--dark);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:200}
+.logo{font-family:'Playfair Display',serif;font-size:17px;color:var(--gold);letter-spacing:3px;text-transform:uppercase}
+.logo span{color:#555;font-size:10px;letter-spacing:1px;font-family:'Inter',sans-serif;font-weight:300;margin-left:8px}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#555;display:inline-block;margin-left:8px;transition:background .3s}
+.sync-dot.ok{background:#4CAF50}.sync-dot.syncing{background:var(--gold)}.sync-dot.err{background:#E53935}
+.header-right{display:flex;gap:8px;align-items:center}
+.btn-gold{background:var(--gold);border:none;color:var(--dark);padding:7px 16px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-gold:hover{opacity:.85}
+.btn-outline{background:none;border:1px solid #444;color:#aaa;padding:6px 12px;border-radius:4px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.toolbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;gap:10px;height:52px;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;max-width:240px}
+.search-wrap input{width:100%;border:1px solid var(--border);border-radius:4px;padding:6px 10px 6px 28px;font-size:13px;font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);outline:none}
+.search-wrap input:focus{border-color:var(--gold)}
+.search-icon{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none}
+.filter-select{border:1px solid var(--border);border-radius:4px;padding:6px 8px;font-size:12px;font-family:'Inter',sans-serif;background:var(--white);color:var(--ink);outline:none;cursor:pointer}
+.filter-select:focus{border-color:var(--gold)}
+.view-tabs{display:flex;gap:4px;margin-left:auto}
+.view-tab{border:1px solid var(--border);background:none;color:var(--muted);padding:5px 12px;border-radius:4px;font-size:12px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.view-tab.active{background:var(--dark);color:var(--gold);border-color:var(--dark)}
+.kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
+.kpi-cell{background:var(--white);padding:12px 16px}
+.kpi-cell:first-child{border-left:3px solid var(--gold)}
+.kpi-label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px}
+.kpi-value{font-size:20px;font-weight:300;color:var(--ink)}
+.kpi-value.gold{color:var(--gold)}.kpi-value.green{color:var(--green)}
+#listView{padding:1.5rem}
+.list-table{width:100%;border-collapse:collapse;background:var(--white);border:1px solid var(--border);border-radius:2px;overflow:hidden}
+.list-table thead tr{background:var(--section-bg)}
+.list-table th{padding:9px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted);text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+.list-table td{padding:9px 12px;font-size:13px;border-bottom:1px solid #F5F0E8;vertical-align:middle}
+.list-table tr:last-child td{border-bottom:none}
+.list-table tr:hover td{background:#FDFBF7;cursor:pointer}
+.badge{display:inline-block;padding:3px 8px;border-radius:3px;font-size:11px;font-weight:500;white-space:nowrap}
+.badge-nouveau{background:#F0F0F0;color:#555}
+.badge-contacte{background:var(--blue-bg);color:var(--blue)}
+.badge-rdv{background:var(--amber-bg);color:var(--amber)}
+.badge-seance{background:var(--green-bg);color:var(--green)}
+.badge-perdu{background:var(--red-bg);color:var(--red)}
+.check{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:3px;font-size:12px}
+.check.yes{background:var(--green-bg);color:var(--green)}.check.no{background:#F5F5F5;color:#CCC}
+.source-tag{font-size:11px;color:var(--muted);background:var(--section-bg);padding:2px 7px;border-radius:3px}
+.studio-pill{font-size:11px;font-weight:600;color:var(--gold);background:#1A1A1A;padding:2px 8px;border-radius:3px;letter-spacing:.5px}
+#kanbanView{padding:1.5rem;display:none}
+.kanban-cols{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:start}
+.kanban-col-head{padding:10px 12px;border-radius:4px 4px 0 0;border-bottom:2px solid transparent;margin-bottom:8px}
+.kanban-col-head.nouveau{background:#F0F0F0;border-color:#CCC}
+.kanban-col-head.contacte{background:var(--blue-bg);border-color:#7099CC}
+.kanban-col-head.rdv{background:var(--amber-bg);border-color:#C9A84C}
+.kanban-col-head.seance{background:var(--green-bg);border-color:#5A9E5A}
+.kanban-col-head.perdu{background:var(--red-bg);border-color:#CC7070}
+.kanban-col-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.kanban-col-count{font-size:11px;color:var(--muted);margin-top:2px}
+.kanban-card{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:12px;margin-bottom:8px;cursor:pointer;transition:box-shadow .15s}
+.kanban-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.card-name{font-size:13px;font-weight:500;margin-bottom:6px}
+.card-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.card-checks{display:flex;gap:4px;flex-wrap:wrap}
+.card-check{font-size:10px;padding:2px 6px;border-radius:3px;font-weight:500}
+.card-check.yes{background:var(--green-bg);color:var(--green)}.card-check.no{background:#F5F5F5;color:#BBB}
+.card-note{font-size:11px;color:var(--muted);margin-top:6px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:4px;width:100%;max-width:500px;max-height:92vh;overflow-y:auto}
+.modal-head{background:var(--dark);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0}
+.modal-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--gold)}
+.modal-close{background:none;border:none;color:#666;font-size:20px;cursor:pointer;padding:2px 6px}
+.modal-close:hover{color:var(--gold)}
+.modal-body{padding:18px}
+.form-row{margin-bottom:12px}
+.form-row label{display:block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:4px}
+.form-row input,.form-row select,.form-row textarea{width:100%;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:13px;font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);outline:none}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:var(--gold)}
+.form-row textarea{min-height:64px;resize:vertical}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.checks-row{display:flex;gap:14px;flex-wrap:wrap}
+.check-toggle{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;user-select:none}
+.check-toggle input{display:none}
+.check-box{width:20px;height:20px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s}
+.check-toggle input:checked + .check-box{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+.modal-footer{padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between;gap:10px;position:sticky;bottom:0;background:var(--white)}
+.btn-save{background:var(--gold);border:none;color:var(--dark);padding:9px 22px;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-delete{background:none;border:1px solid var(--border);color:var(--red);padding:9px 14px;border-radius:4px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-delete:hover{background:var(--red-bg)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--dark);color:var(--gold);padding:10px 20px;border-radius:4px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+@media(max-width:800px){
+  .kanban-cols{grid-template-columns:1fr 1fr}
+  .kpi-strip{grid-template-columns:repeat(3,1fr)}
+  .toolbar{padding:8px 1rem;height:auto;gap:6px}
+  #listView,#kanbanView{padding:1rem}
+  .list-table th:nth-child(5),.list-table td:nth-child(5),
+  .list-table th:nth-child(6),.list-table td:nth-child(6){display:none}
+}
+@media(max-width:500px){
+  .kanban-cols{grid-template-columns:1fr}
+  .kpi-strip{grid-template-columns:1fr 1fr}
+  .form-row-2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<header class="app-header">
+  <div class="logo">ONESCALP <span>crm</span><span class="sync-dot" id="syncDot"></span></div>
+  <div class="header-right">
+    <button class="btn-outline" onclick="exportCSV()">↓ CSV</button>
+    <button class="btn-gold" onclick="openModal()">+ Lead</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="searchInput" placeholder="Rechercher..." oninput="renderAll()">
+  </div>
+  <select class="filter-select" id="filterStudio" onchange="renderAll()">
+    <option value="">Tous studios</option>
+    <option value="Genève">Genève</option>
+    <option value="Paris">Paris</option>
+  </select>
+  <select class="filter-select" id="filterStatus" onchange="renderAll()">
+    <option value="">Tous statuts</option>
+    <option value="Nouveau">Nouveau</option>
+    <option value="Contacté">Contacté</option>
+    <option value="RDV pris">RDV pris</option>
+    <option value="Séance faite">Séance faite</option>
+    <option value="Perdu">Perdu</option>
+  </select>
+  <select class="filter-select" id="filterSource" onchange="renderAll()">
+    <option value="">Toutes sources</option>
+    <option value="Instagram">Instagram</option>
+    <option value="Google">Google</option>
+    <option value="Bouche-à-oreille">Bouche-à-oreille</option>
+    <option value="TikTok">TikTok</option>
+    <option value="Autre">Autre</option>
+  </select>
+  <div class="view-tabs">
+    <button class="view-tab active" onclick="switchView('list',this)">☰ Liste</button>
+    <button class="view-tab" onclick="switchView('kanban',this)">⊞ Kanban</button>
+  </div>
+</div>
+
+<div class="kpi-strip">
+  <div class="kpi-cell"><div class="kpi-label">Total leads</div><div class="kpi-value gold" id="kTotal">—</div></div>
+  <div class="kpi-cell"><div class="kpi-label">RDV pris</div><div class="kpi-value" id="kRdv">—</div></div>
+  <div class="kpi-cell"><div class="kpi-label">Séances</div><div class="kpi-value green" id="kSeance">—</div></div>
+  <div class="kpi-cell"><div class="kpi-label">Photos reçues</div><div class="kpi-value" id="kPhotos">—</div></div>
+  <div class="kpi-cell"><div class="kpi-label">Conversion</div><div class="kpi-value" id="kConv">—</div></div>
+</div>
+
+<div id="listView">
+  <table class="list-table">
+    <thead><tr>
+      <th>Nom</th><th>Studio</th><th>Source</th><th>Statut</th>
+      <th>Téléphone</th><th>Instagram</th><th>Photos</th><th>RDV</th><th>Date</th>
+    </tr></thead>
+    <tbody id="listBody"></tbody>
+  </table>
+</div>
+
+<div id="kanbanView">
+  <div class="kanban-cols">
+    <div><div class="kanban-col-head nouveau"><div class="kanban-col-title">Nouveau</div><div class="kanban-col-count" id="kk-nouveau">0</div></div><div id="col-nouveau"></div></div>
+    <div><div class="kanban-col-head contacte"><div class="kanban-col-title">Contacté</div><div class="kanban-col-count" id="kk-contacte">0</div></div><div id="col-contacte"></div></div>
+    <div><div class="kanban-col-head rdv"><div class="kanban-col-title">RDV pris</div><div class="kanban-col-count" id="kk-rdv">0</div></div><div id="col-rdv"></div></div>
+    <div><div class="kanban-col-head seance"><div class="kanban-col-title">Séance faite</div><div class="kanban-col-count" id="kk-seance">0</div></div><div id="col-seance"></div></div>
+    <div><div class="kanban-col-head perdu"><div class="kanban-col-title">Perdu</div><div class="kanban-col-count" id="kk-perdu">0</div></div><div id="col-perdu"></div></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title" id="modalTitle">Nouveau lead</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row-2">
+        <div class="form-row"><label>Prénom / Nom</label><input type="text" id="fName" placeholder="Jean Dupont"></div>
+        <div class="form-row"><label>Studio</label><select id="fStudio"><option>Genève</option><option>Paris</option></select></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row"><label>Téléphone</label><input type="tel" id="fPhone" placeholder="+41 79 000 00 00"></div>
+        <div class="form-row"><label>Instagram</label><input type="text" id="fInsta" placeholder="@handle"></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row"><label>Source</label>
+          <select id="fSource"><option>Instagram</option><option>Google</option><option>Bouche-à-oreille</option><option>TikTok</option><option>Autre</option></select>
+        </div>
+        <div class="form-row"><label>Statut</label>
+          <select id="fStatus"><option>Nouveau</option><option>Contacté</option><option>RDV pris</option><option>Séance faite</option><option>Perdu</option></select>
+        </div>
+      </div>
+      <div class="form-row"><label>Checklist</label>
+        <div class="checks-row">
+          <label class="check-toggle"><input type="checkbox" id="fCalled"><span class="check-box">✓</span> A appelé</label>
+          <label class="check-toggle"><input type="checkbox" id="fPhotos"><span class="check-box">✓</span> Photos reçues</label>
+          <label class="check-toggle"><input type="checkbox" id="fRdv"><span class="check-box">✓</span> RDV confirmé</label>
+        </div>
+      </div>
+      <div class="form-row"><label>Notes</label><textarea id="fNotes" placeholder="Zone de tête, historique..."></textarea></div>
+      <div class="form-row"><label>Date premier contact</label><input type="text" id="fDate" placeholder="jj/mm/aaaa"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-delete" id="btnDelete" onclick="deleteLead()" style="display:none">Supprimer</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn-outline" onclick="closeModal()">Annuler</button>
+        <button class="btn-save" onclick="saveLead()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPA_URL = 'https://lvczqcbhdasnzahnnebx.supabase.co';
+const SUPA_KEY = 'sb_publishable_vOyhSuwNfTAsZhnxCeuOdw_6BxLrD2d';
+
+let leads = [];
+let editId = null;
+
+function syncDot(state) {
+  const d = document.getElementById('syncDot');
+  d.className = 'sync-dot ' + state;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+async function api(method, path, body) {
+  syncDot('syncing');
+  try {
+    const res = await fetch(SUPA_URL + '/rest/v1/' + path, {
+      method,
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
+      },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    syncDot('ok');
+    if (!res.ok) throw new Error(await res.text());
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
+  } catch(e) {
+    syncDot('err');
+    showToast('Erreur de connexion');
+    throw e;
+  }
+}
+
+async function loadLeads() {
+  syncDot('syncing');
+  const data = await api('GET', 'leads?order=date.asc.nullslast&select=*');
+  leads = data || [];
+  renderAll();
+}
+
+function parseDate(d) {
+  if (!d) return Infinity;
+  const p = d.split('/');
+  if (p.length === 3) return new Date(p[2], p[1]-1, p[0]).getTime();
+  return Infinity;
+}
+
+function statusSlug(s) {
+  return {Nouveau:'nouveau',Contacté:'contacte','RDV pris':'rdv','Séance faite':'seance',Perdu:'perdu'}[s]||'nouveau';
+}
+
+function filtered() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const st = document.getElementById('filterStudio').value;
+  const ss = document.getElementById('filterStatus').value;
+  const src = document.getElementById('filterSource').value;
+  return leads.filter(l => {
+    if (q && !(l.name||'').toLowerCase().includes(q) && !(l.insta||'').toLowerCase().includes(q)) return false;
+    if (st && l.studio !== st) return false;
+    if (ss && l.status !== ss) return false;
+    if (src && l.source !== src) return false;
+    return true;
+  }).sort((a,b) => parseDate(a.date) - parseDate(b.date));
+}
+
+function renderKPIs() {
+  const rdv = leads.filter(l=>l.rdv||l.status==='RDV pris'||l.status==='Séance faite').length;
+  const seance = leads.filter(l=>l.status==='Séance faite').length;
+  const photos = leads.filter(l=>l.photos).length;
+  const conv = leads.length > 0 ? Math.round(seance/leads.length*100) : null;
+  document.getElementById('kTotal').textContent = leads.length;
+  document.getElementById('kRdv').textContent = rdv;
+  document.getElementById('kSeance').textContent = seance;
+  document.getElementById('kPhotos').textContent = photos;
+  document.getElementById('kConv').textContent = conv !== null ? conv+'%' : '—';
+}
+
+function renderList() {
+  const data = filtered();
+  const tbody = document.getElementById('listBody');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:3rem;color:var(--muted);font-size:13px">Aucun lead</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(l => `
+    <tr onclick="openModal('${l.id}')">
+      <td style="font-weight:500">${l.name||'—'}</td>
+      <td><span class="studio-pill">${l.studio==='Genève'?'GE':'PA'}</span></td>
+      <td><span class="source-tag">${l.source||'—'}</span></td>
+      <td><span class="badge badge-${statusSlug(l.status)}">${l.status||'Nouveau'}</span></td>
+      <td style="color:var(--muted);font-size:12px">${l.phone||'—'}</td>
+      <td style="color:var(--blue);font-size:12px">${l.insta||'—'}</td>
+      <td><span class="check ${l.photos?'yes':'no'}">${l.photos?'✓':'·'}</span></td>
+      <td><span class="check ${l.rdv?'yes':'no'}">${l.rdv?'✓':'·'}</span></td>
+      <td style="color:var(--muted);font-size:12px">${l.date||'—'}</td>
+    </tr>`).join('');
+}
+
+function renderKanban() {
+  const COLS = ['Nouveau','Contacté','RDV pris','Séance faite','Perdu'];
+  const data = filtered();
+  COLS.forEach(col => {
+    const slug = statusSlug(col);
+    const colData = data.filter(l => (l.status||'Nouveau') === col);
+    document.getElementById('kk-'+slug).textContent = colData.length + ' lead' + (colData.length!==1?'s':'');
+    const el = document.getElementById('col-'+slug);
+    el.innerHTML = colData.map(l => `
+      <div class="kanban-card" onclick="openModal('${l.id}')">
+        <div class="card-name">${l.name||'—'}</div>
+        <div class="card-meta">
+          <span class="studio-pill" style="font-size:10px">${l.studio==='Genève'?'GE':'PA'}</span>
+          <span class="source-tag">${l.source||'—'}</span>
+        </div>
+        <div class="card-checks">
+          <span class="card-check ${l.called?'yes':'no'}">📞 ${l.called?'Oui':'Non'}</span>
+          <span class="card-check ${l.photos?'yes':'no'}">📷 ${l.photos?'Oui':'Non'}</span>
+          <span class="card-check ${l.rdv?'yes':'no'}">📅 ${l.rdv?'Oui':'Non'}</span>
+        </div>
+        ${l.notes?`<div class="card-note">${l.notes.substring(0,60)}${l.notes.length>60?'…':''}</div>`:''}
+      </div>`).join('');
+  });
+}
+
+function renderAll() { renderKPIs(); renderList(); renderKanban(); }
+
+function switchView(v, btn) {
+  document.querySelectorAll('.view-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('listView').style.display = v==='list'?'block':'none';
+  document.getElementById('kanbanView').style.display = v==='kanban'?'block':'none';
+}
+
+function openModal(id) {
+  editId = id || null;
+  const l = id ? leads.find(x=>x.id===id) : null;
+  document.getElementById('modalTitle').textContent = l ? 'Modifier le lead' : 'Nouveau lead';
+  document.getElementById('fName').value   = l?.name   || '';
+  document.getElementById('fStudio').value = l?.studio || 'Genève';
+  document.getElementById('fPhone').value  = l?.phone  || '';
+  document.getElementById('fInsta').value  = l?.insta  || '';
+  document.getElementById('fSource').value = l?.source || 'Instagram';
+  document.getElementById('fStatus').value = l?.status || 'Nouveau';
+  document.getElementById('fCalled').checked  = !!l?.called;
+  document.getElementById('fPhotos').checked  = !!l?.photos;
+  document.getElementById('fRdv').checked     = !!l?.rdv;
+  document.getElementById('fNotes').value  = l?.notes  || '';
+  document.getElementById('fDate').value   = l?.date   || new Date().toLocaleDateString('fr-CH');
+  document.getElementById('btnDelete').style.display = l ? 'block' : 'none';
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('fName').focus(), 50);
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); editId = null; }
+function closeModalOutside(e) { if (e.target===document.getElementById('modalOverlay')) closeModal(); }
+
+async function saveLead() {
+  const name = document.getElementById('fName').value.trim();
+  if (!name) { document.getElementById('fName').focus(); return; }
+  const lead = {
+    id:     editId || (Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
+    name,
+    studio: document.getElementById('fStudio').value,
+    phone:  document.getElementById('fPhone').value.trim(),
+    insta:  document.getElementById('fInsta').value.trim(),
+    source: document.getElementById('fSource').value,
+    status: document.getElementById('fStatus').value,
+    called: document.getElementById('fCalled').checked,
+    photos: document.getElementById('fPhotos').checked,
+    rdv:    document.getElementById('fRdv').checked,
+    notes:  document.getElementById('fNotes').value.trim(),
+    date:   document.getElementById('fDate').value.trim(),
+  };
+  try {
+    if (editId) {
+      await api('PATCH', `leads?id=eq.${editId}`, lead);
+      const i = leads.findIndex(x=>x.id===editId);
+      if (i>-1) leads[i] = lead;
+    } else {
+      await api('POST', 'leads', lead);
+      leads.unshift(lead);
+    }
+    closeModal();
+    renderAll();
+    showToast(editId ? 'Lead mis à jour ✓' : 'Lead ajouté ✓');
+  } catch(e) {}
+}
+
+async function deleteLead() {
+  if (!editId || !confirm('Supprimer ce lead ?')) return;
+  try {
+    await api('DELETE', `leads?id=eq.${editId}`);
+    leads = leads.filter(x=>x.id!==editId);
+    closeModal(); renderAll();
+    showToast('Lead supprimé');
+  } catch(e) {}
+}
+
+function exportCSV() {
+  const h = ['Nom','Studio','Téléphone','Instagram','Source','Statut','Appelé','Photos','RDV','Notes','Date'];
+  const rows = leads.map(l=>[l.name,l.studio,l.phone,l.insta,l.source,l.status,l.called?'Oui':'Non',l.photos?'Oui':'Non',l.rdv?'Oui':'Non',l.notes,l.date].map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(','));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿'+[h.join(','),...rows].join('\n'),{type:'text/csv;charset=utf-8'}]));
+  a.download = `ONESCALP_CRM_${new Date().toLocaleDateString('fr-CH').replace(/\//g,'-')}.csv`;
+  a.click();
+}
+
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+loadLeads();
+// Refresh toutes les 30 secondes
+setInterval(loadLeads, 30000);
+</script>
+</body>
+</html>
